@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "contract/script/read-gold.js"  ],
   "exclude": ["node_modules"]
 }
