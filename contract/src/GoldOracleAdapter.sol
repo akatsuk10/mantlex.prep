@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.19;
 
 import "@pythnetwork/pyth-sdk-solidity/IPyth.sol";
 import "@pythnetwork/pyth-sdk-solidity/PythStructs.sol";
@@ -14,24 +14,8 @@ contract GoldOracleAdapter {
         XAU_USD_PRICE_ID = _xauUsdPriceId;
     }
 
-    function updateAndGetGoldPrice(
-        bytes[] calldata priceUpdateData
-    ) external payable returns (uint256) {
-        uint256 fee = pyth.getUpdateFee(priceUpdateData);
-        require(msg.value >= fee, "Insufficient fee");
-        pyth.updatePriceFeeds{value: fee}(priceUpdateData);
-
-        PythStructs.Price memory p = pyth.getPriceNoOlderThan(
-            XAU_USD_PRICE_ID,
-            60
-        );
-
-        uint256 priceE18 = PythUtils.convertToUint(
-            p.price,
-            p.expo,
-            18
-        );
-
-        return priceE18;
+    function getGoldPrice() external view returns (uint256) {
+        PythStructs.Price memory p = pyth.getPriceUnsafe(XAU_USD_PRICE_ID);
+        return PythUtils.convertToUint(p.price, p.expo, 18);
     }
 }

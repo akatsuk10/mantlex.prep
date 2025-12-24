@@ -9,7 +9,7 @@ contract DeployPerpMarket is Script {
         uint256 pk = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(pk);
 
-        address adapter = 0x037068F2a147855c275b9D8d009ef5FaD56dC911;
+        address adapter = 0x828a3617302E77e66872A40B458Dc50127160381;
 
         PerpMarket market = new PerpMarket(adapter);
         console2.log("XautPerpMarketV1:", address(market));

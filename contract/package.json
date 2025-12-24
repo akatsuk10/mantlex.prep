@@ -18,6 +18,7 @@
     "@pythnetwork/pyth-sdk-solidity": "^4.3.1",
     "axios": "^1.13.2",
     "dotenv": "^17.2.3",
-    "ethers": "^6.16.0"
+    "ethers": "^6.16.0",
+    "solc": "0.8.7-fixed"
   }
 }
