@@ -1,26 +1,35 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useState } from "react";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
-import { ethers } from "ethers";
-import axios from "axios";
-import { createChart, LineSeries, type Time } from "lightweight-charts";
+import { motion, AnimatePresence } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TradingChart } from "@/components/TradingChart";
+import { Navbar } from "@/components/Navbar";
+import { MarketHeader } from "@/components/MarketHeader";
+import { MarketStats } from "@/components/MarketStats";
+import { PositionCard } from "@/components/PositionCard";
+import { TradePanel } from "@/components/TradePanel";
+import { useMarketData } from "@/hooks/useMarketData";
+import { usePosition } from "@/hooks/usePosition";
+import { useTrade } from "@/hooks/useTrade";
+import { Activity } from "lucide-react";
 
-import { PERP_ADDRESS } from "@/lib/contracts";
-import PERP_ABI from "@/lib/PerpMarket.json";
+const MAX_LEVERAGE = 10;
 
-/* ---------------- CONFIG ---------------- */
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
 
-const INIT_MARGIN_RATE = 0.1;
-const MAX_LEVERAGE_UI = 10;
-
-/* ---------------- TYPES ---------------- */
-
-type Position = {
-  size: bigint;
-  entryPrice: bigint;
-  margin: bigint;
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 },
 };
 
 export default function Home() {
@@ -28,26 +37,15 @@ export default function Home() {
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
 
-  const [price, setPrice] = useState<number | null>(null);
+  const [timeframe, setTimeframe] = useState<"15m" | "30m" | "24h" | "7d">("24h");
+  const [activeTab, setActiveTab] = useState<"market" | "positions">("market");
   const [margin, setMargin] = useState("1");
   const [leverage, setLeverage] = useState(3);
-  const [loading, setLoading] = useState(false);
-
-  const [position, setPosition] = useState<Position | null>(null);
   const [closePercent, setClosePercent] = useState(100);
 
-  /* ---------------- HELPERS ---------------- */
-
-  const fmt = (v?: bigint, d = 18) => {
-    if (typeof v !== "bigint") return 0;
-    try {
-      return Number(ethers.formatUnits(v, d));
-    } catch {
-      return 0;
-    }
-  };
-
-  /* ---------------- DERIVED ---------------- */
+  const { price, priceChange, marketCap, ohlcData } = useMarketData(timeframe);
+  const { position, decoded, loadPosition } = usePosition(address, publicClient, price);
+  const { loading, openPosition, closePosition } = useTrade(loadPosition);
 
   const marginNum = Number(margin) || 0;
   const notional = price ? marginNum * leverage : 0;
@@ -58,262 +56,162 @@ export default function Home() {
     price !== null &&
     marginNum > 0 &&
     leverage >= 1 &&
-    leverage <= MAX_LEVERAGE_UI &&
+    leverage <= MAX_LEVERAGE &&
     !loading;
 
-  /* ---------------- PRICE ---------------- */
-
-  async function fetchPrice() {
-    try {
-      const r = await axios.get(
-        "https://api.coingecko.com/api/v3/simple/price?ids=tether-gold&vs_currencies=usd"
-      );
-      const p = r.data["tether-gold"].usd;
-      console.log("[PERP] PRICE:", p);
-      setPrice(p);
-    } catch (e) {
-      console.error("[PERP] PRICE FAILED", e);
-    }
-  }
-
-  /* ---------------- POSITION LOAD ---------------- */
-
-  async function loadPosition() {
-    if (!address || !publicClient) return;
-
-    try {
-      const raw = (await publicClient.readContract({
-        address: PERP_ADDRESS as `0x${string}`,
-        abi: PERP_ABI.abi,
-        functionName: "positions",
-        args: [address],
-      })) as readonly [bigint, bigint, bigint];
-
-      console.log("[PERP] RAW POSITION:", raw);
-
-      const [size, entryPrice, margin] = raw;
-
-      if (size !== BigInt(0)) {
-        setPosition({ size, entryPrice, margin });
-      } else {
-        setPosition(null);
-      }
-    } catch (e) {
-      console.error("[PERP] LOAD POSITION FAILED", e);
-      setPosition(null);
-    }
-  }
-
-
-  /* ---------------- OPEN ---------------- */
-
-  async function handleOpen(isLong: boolean) {
+  const handleOpenLong = () => {
     if (!canTrade || !walletClient || !price) return;
+    openPosition(walletClient, true, size, margin);
+  };
 
-    setLoading(true);
-    console.group("[PERP] OPEN");
+  const handleOpenShort = () => {
+    if (!canTrade || !walletClient || !price) return;
+    openPosition(walletClient, false, size, margin);
+  };
 
-    try {
-      const provider = new ethers.BrowserProvider(walletClient.transport);
-      const signer = await provider.getSigner();
-      const perp = new ethers.Contract(PERP_ADDRESS, PERP_ABI.abi, signer);
-
-      const sizeDelta = ethers.parseUnits(size.toFixed(6), 18);
-      const marginDelta = ethers.parseEther(margin);
-
-      console.log("sizeDelta:", sizeDelta.toString());
-      console.log("marginDelta:", marginDelta.toString());
-
-      await perp.openPosition(isLong, sizeDelta, marginDelta, {
-        value: marginDelta,
-      });
-
-      await loadPosition();
-    } catch (e: any) {
-      console.error("[PERP] OPEN FAILED", e?.reason || e);
-    } finally {
-      setLoading(false);
-      console.groupEnd();
-    }
-  }
-
-  /* ---------------- CLOSE ---------------- */
-
-  async function handleClose() {
+  const handleClose = () => {
     if (!position || !walletClient) return;
-
-    setLoading(true);
-    console.group("[PERP] CLOSE");
-
-    try {
-      const provider = new ethers.BrowserProvider(walletClient.transport);
-      const signer = await provider.getSigner();
-      const perp = new ethers.Contract(PERP_ADDRESS, PERP_ABI.abi, signer);
-
-      const absSize = position.size < BigInt(0) ? -position.size : position.size;
-      const closeSize = (absSize * BigInt(closePercent)) / BigInt(100);
-
-      console.log("closeSize:", closeSize.toString());
-
-      await perp.closePosition(closeSize);
-      await loadPosition();
-    } catch (e: any) {
-      console.error("[PERP] CLOSE FAILED", e?.reason || e);
-    } finally {
-      setLoading(false);
-      console.groupEnd();
-    }
-  }
-
-  /* ---------------- EFFECTS ---------------- */
-
-  // Load price once
-  useEffect(() => {
-    fetchPrice();
-  }, []);
-
-  // Reload position whenever wallet connects / changes
-  useEffect(() => {
-    if (address && publicClient) {
-      loadPosition();
-    }
-  }, [address, publicClient]);
-
-  /* ---------------- CHART ---------------- */
-
-  useEffect(() => {
-    if (!price) return;
-
-    const el = document.getElementById("chart");
-    if (!el) return;
-    el.innerHTML = "";
-
-    const chart = createChart(el, {
-      height: 280,
-      layout: {
-        background: { color: "#020617" },
-        textColor: "#cbd5e1",
-      },
-    });
-
-    const series = chart.addSeries(LineSeries, {
-      color: "#22c55e",
-      lineWidth: 2,
-    });
-
-    series.setData([
-      {
-        time: Math.floor(Date.now() / 1000) as Time,
-        value: price,
-      },
-    ]);
-
-    chart.timeScale().fitContent();
-    return () => chart.remove();
-  }, [price]);
-
-  /* ---------------- POSITION METRICS ---------------- */
-
-  const decoded = useMemo(() => {
-    if (!position) return null;
-
-    const absSize = fmt(position.size < BigInt(0) ? -position.size : position.size);
-    const entry = fmt(position.entryPrice);
-    const marginUsd = fmt(position.margin);
-
-    const side = position.size > BigInt(0) ? "LONG" : "SHORT";
-    const pnl =
-      price !== null
-        ? (price - entry) * absSize * (side === "LONG" ? 1 : -1)
-        : 0;
-
-    const lev =
-      marginUsd > 0 && price !== null
-        ? (absSize * price) / marginUsd
-        : 0;
-
-    return { side, absSize, entry, marginUsd, pnl, lev };
-  }, [position, price]);
-
-  /* ---------------- UI ---------------- */
+    closePosition(walletClient, position, closePercent);
+  };
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50 flex justify-center">
-      <div className="w-full max-w-3xl p-6 space-y-6">
+    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/10 mt-10">
+      <Navbar />
 
-        <header className="flex justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold">XAUT Perp</h1>
-            <p className="text-xs text-slate-400">Mantle Sepolia</p>
-          </div>
-          <ConnectButton />
-        </header>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
+          <h1 className="text-2xl sm:text-2xl font-extrabold tracking-tight lg:text-2xl text-primary">
+            Trade Gold <span className="text-muted-foreground">On-Chain</span>
+          </h1>
+          <p className="max-w-2xl text-lg text-muted-foreground leading-relaxed">
+            Perpetual futures for Tether Gold (XAUT). Up to 10x leverage. Zero price impact.
+          </p>
+        </motion.div>
 
-        <div id="chart" className="border border-slate-800 rounded-xl" />
-
-        {/* Trade */}
-        <section className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
-          <input
-            type="number"
-            value={margin}
-            onChange={(e) => setMargin(e.target.value)}
-            className="w-full bg-slate-950 px-3 py-2 rounded-md"
-            placeholder="Margin (MNT)"
-          />
-
-          <input
-            type="range"
-            min={1}
-            max={MAX_LEVERAGE_UI}
-            value={leverage}
-            onChange={(e) => setLeverage(Number(e.target.value))}
-          />
-
-          <div className="text-xs text-slate-400">
-            Size: {size.toFixed(6)} XAUT · Notional: ${notional.toFixed(2)}
-          </div>
-
-          <div className="flex gap-2">
-            <button onClick={() => handleOpen(true)} className="flex-1 bg-emerald-500 text-black py-2 rounded-md">
-              Long
-            </button>
-            <button onClick={() => handleOpen(false)} className="flex-1 bg-rose-500 text-black py-2 rounded-md">
-              Short
-            </button>
-          </div>
-        </section>
-
-        {/* Position */}
-        {decoded && (
-          <section className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
-            <div className="flex justify-between">
-              <div className="font-semibold">{decoded.side}</div>
-              <div className={decoded.pnl >= 0 ? "text-emerald-400" : "text-rose-400"}>
-                PnL: {decoded.pnl.toFixed(2)} USD
-              </div>
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 lg:grid-cols-12 gap-8"
+        >
+          <div className="lg:col-span-8 space-y-0">
+            <div className="flex items-center gap-2 mb-10">
+              <button
+                onClick={() => setActiveTab("market")}
+                className={`px-4 py-1.5 text-sm font-mono rounded-lg border transition-all ${activeTab === "market"
+                    ? "bg-black text-white border-black font-medium shadow-sm"
+                    : "bg-white text-muted-foreground border-border/60 hover:border-border hover:text-foreground transition-colors cursor-pointer"
+                  }`}
+              >
+                Overview
+              </button>
+              <button
+                onClick={() => setActiveTab("positions")}
+                className={`px-4 py-1.5 text-sm font-mono rounded-lg border transition-all ${activeTab === "positions"
+                    ? "bg-black text-white border-black font-medium shadow-sm"
+                    : "bg-white text-muted-foreground border-border/60 hover:border-border hover:text-foreground transition-colors cursor-pointer"
+                  }`}
+              >
+                Position
+              </button>
             </div>
 
-            <div className="grid grid-cols-2 text-xs text-slate-400 gap-1">
-              <div>Entry</div><div>${decoded.entry.toFixed(2)}</div>
-              <div>Mark</div><div>${price?.toFixed(2)}</div>
-              <div>Margin</div><div>${decoded.marginUsd.toFixed(2)}</div>
-              <div>Leverage</div><div>{decoded.lev.toFixed(2)}×</div>
+            <div className="min-h-[600px]">
+              <AnimatePresence mode="wait">
+                {activeTab === "market" ? (
+                  <motion.div
+                    key="market"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <MarketHeader price={price} priceChange={priceChange} marketCap={marketCap} />
+
+                    <div className="mb-8 mt-6">
+                      {ohlcData.length > 0 ? (
+                        <TradingChart data={ohlcData} />
+                      ) : (
+                        <div className="h-[350px] flex items-center justify-center text-muted-foreground border border-dashed border-border/50 rounded-lg">
+                          <div className="flex flex-col items-center gap-2">
+                            <Skeleton className="h-12 w-12 rounded-full" />
+                            <span className="text-xs font-mono lowercase">loading data...</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex justify-center mb-10">
+                      <div className="bg-muted/30 p-1 rounded-lg flex items-center gap-1">
+                        {(["15m", "30m", "24h", "7d"] as const).map((tf) => (
+                          <button
+                            key={tf}
+                            onClick={() => setTimeframe(tf)}
+                            className={`px-4 py-1.5 rounded-md text-sm font-mono transition-all ${timeframe === tf
+                              ? "bg-background shadow-sm text-foreground font-medium"
+                              : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                              }`}
+                          >
+                            {tf}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <MarketStats price={price} priceChange={priceChange} marketCap={marketCap} />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="positions"
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="h-full"
+                  >
+                    {decoded ? (
+                      <PositionCard
+                        decoded={decoded}
+                        closePercent={closePercent}
+                        setClosePercent={setClosePercent}
+                        onClose={handleClose}
+                        loading={loading}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground">
+                        <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                          <Activity className="w-8 h-8 opacity-40" />
+                        </div>
+                        <p className="text-lg font-medium">No active positions</p>
+                        <p className="text-sm">Open a trade to see it here.</p>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
+          </div>
 
-            <input
-              type="range"
-              min={1}
-              max={100}
-              value={closePercent}
-              onChange={(e) => setClosePercent(Number(e.target.value))}
-            />
-
-            <button onClick={handleClose} className="w-full bg-rose-500 text-black py-2 rounded-md">
-              Close {closePercent}%
-            </button>
-          </section>
-        )}
-      </div>
-    </main>
+          <div className="lg:col-span-4 space-y-6">
+            <motion.div variants={itemVariants} className="sticky top-24">
+              <TradePanel
+                margin={margin}
+                setMargin={setMargin}
+                leverage={leverage}
+                setLeverage={setLeverage}
+                size={size}
+                notional={notional}
+                price={price}
+                canTrade={canTrade}
+                isConnected={isConnected}
+                loading={loading}
+                onOpenLong={handleOpenLong}
+                onOpenShort={handleOpenShort}
+              />
+            </motion.div>
+          </div>
+        </motion.div>
+      </main>
+    </div>
   );
 }
