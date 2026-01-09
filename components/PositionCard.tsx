@@ -38,16 +38,16 @@ export const PositionCard = ({
       {/* Header Section */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-            <Activity className="w-5 h-5 text-gray-700" />
+          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+            <Activity className="w-5 h-5 text-foreground" />
           </div>
           <div>
-            <h3 className="font-semibold text-lg text-gray-900">XAUT/USD</h3>
+            <h3 className="font-semibold text-lg text-foreground">XAUT/USD</h3>
             <Badge
               className={
                 decoded.side === "LONG"
-                  ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-50 border-0 rounded-md text-xs font-medium mt-1"
-                  : "bg-rose-50 text-rose-600 hover:bg-rose-50 border-0 rounded-md text-xs font-medium mt-1"
+                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-950 border-0 rounded-md text-xs font-medium mt-1"
+                  : "bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950 border-0 rounded-md text-xs font-medium mt-1"
               }
             >
               {decoded.side} {decoded.lev.toFixed(1)}x
@@ -57,11 +57,11 @@ export const PositionCard = ({
 
         {/* PnL Display */}
         <div className="text-right">
-          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
             Unrealized PnL
           </p>
           <div
-            className={`text-2xl font-semibold ${decoded.pnl >= 0 ? "text-emerald-600" : "text-rose-600"
+            className={`text-2xl font-semibold ${decoded.pnl >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
               }`}
           >
             {decoded.pnl >= 0 ? "+" : ""}
@@ -72,36 +72,36 @@ export const PositionCard = ({
 
       {/* Stats Section */}
       <div className="space-y-4">
-        <div className="flex justify-between items-center py-3 border-b border-gray-200">
-          <span className="text-sm text-gray-500">Size</span>
-          <span className="text-sm font-medium text-gray-900">
+        <div className="flex justify-between items-center py-3 border-b border-border">
+          <span className="text-sm text-muted-foreground">Size</span>
+          <span className="text-sm font-medium text-foreground">
             {decoded.absSize.toFixed(4)}{" "}
-            <span className="text-gray-400">XAUT</span>
+            <span className="text-muted-foreground">XAUT</span>
           </span>
         </div>
 
-        <div className="flex justify-between items-center py-3 border-b border-gray-200">
-          <span className="text-sm text-gray-500">Entry</span>
-          <span className="text-sm font-medium text-gray-900">
+        <div className="flex justify-between items-center py-3 border-b border-border">
+          <span className="text-sm text-muted-foreground">Entry</span>
+          <span className="text-sm font-medium text-foreground">
             ${decoded.entry.toFixed(2)}
           </span>
         </div>
 
-        <div className="flex justify-between items-center py-3 border-b border-gray-200">
-          <span className="text-sm text-gray-500">Margin</span>
-          <span className="text-sm font-medium text-gray-900">
+        <div className="flex justify-between items-center py-3 border-b border-border">
+          <span className="text-sm text-muted-foreground">Margin</span>
+          <span className="text-sm font-medium text-foreground">
             ${decoded.marginUsd.toFixed(2)}
           </span>
         </div>
       </div>
 
       {/* Close Position Section */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-medium text-gray-700">
+      <div className="space-y-4 ">
+        <div className="flex">
+          <span className="text-sm font-medium text-foreground">
             Close Position
           </span>
-          <span className="text-sm font-semibold text-gray-900">
+          <span className="text-sm font-semibold text-foreground ml-2">
             {closePercent}%
           </span>
         </div>
@@ -113,12 +113,12 @@ export const PositionCard = ({
           step={1}
           value={[closePercent]}
           onValueChange={(vals) => setClosePercent(vals[0])}
-          className="py-1"
+          className="py-1 w-80 flex justify-center items-center"
         />
 
         <Button
           variant="outline"
-          className="cursor-pointer w-90 h-11 font-medium rounded-xl hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-colors"
+          className="cursor-pointer w-90 h-11 font-medium rounded-xl hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:hover:bg-rose-950 dark:hover:text-rose-400 dark:hover:border-rose-900 transition-colors"
           onClick={onClose}
           disabled={loading}
         >

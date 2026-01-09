@@ -2,6 +2,7 @@
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { TrendingUp } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
 
 export const Navbar = () => {
   return (
@@ -15,7 +16,10 @@ export const Navbar = () => {
             XAUT<span className="opacity-50 font-normal">.perp</span>
           </span>
         </div>
-        <ConnectButton showBalance={false} chainStatus="icon" accountStatus="address" />
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <ConnectButton showBalance={false} chainStatus="icon" accountStatus="address" />
+        </div>
       </div>
     </nav>
   );

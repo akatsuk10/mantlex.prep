@@ -99,8 +99,8 @@ export default function Home() {
               <button
                 onClick={() => setActiveTab("market")}
                 className={`px-4 py-1.5 text-sm font-mono rounded-lg border transition-all ${activeTab === "market"
-                    ? "bg-black text-white border-black font-medium shadow-sm"
-                    : "bg-white text-muted-foreground border-border/60 hover:border-border hover:text-foreground transition-colors cursor-pointer"
+                    ? "bg-primary text-primary-foreground border-primary font-medium shadow-sm"
+                    : "bg-background text-muted-foreground border-border/60 hover:border-border hover:text-foreground transition-colors cursor-pointer"
                   }`}
               >
                 Overview
@@ -108,8 +108,8 @@ export default function Home() {
               <button
                 onClick={() => setActiveTab("positions")}
                 className={`px-4 py-1.5 text-sm font-mono rounded-lg border transition-all ${activeTab === "positions"
-                    ? "bg-black text-white border-black font-medium shadow-sm"
-                    : "bg-white text-muted-foreground border-border/60 hover:border-border hover:text-foreground transition-colors cursor-pointer"
+                    ? "bg-primary text-primary-foreground border-primary font-medium shadow-sm"
+                    : "bg-background text-muted-foreground border-border/60 hover:border-border hover:text-foreground transition-colors cursor-pointer"
                   }`}
               >
                 Position
