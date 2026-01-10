@@ -96,25 +96,10 @@ This project is **NOT audited** and is built for:
 
 ---
 
-## Roadmap
-
-- [ ] Funding rates
-- [ ] Multiple RWAs
-- [ ] Cross-margin
-- [ ] Position NFTs
-- [ ] Insurance fund
-- [ ] Keeper bots
-
----
-
-## Contributing
-
-PRs welcome! Please open an issue first to discuss major changes.
-
----
-
 ## Contact
 
 For questions or feedback, open an issue or reach out on Twitter.
+
+Design and Build by [Avhi](https://x.com/avhidotsol) & [Shivendra](https://x.com/shibu0x)
 
 ---
