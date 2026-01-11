@@ -2,6 +2,7 @@
 
 import { ExternalLink } from "lucide-react";
 import { MarketKey, MARKETS } from "@/lib/markets";
+import { PERP_ADDRESS } from "@/lib/contracts";
 
 type MarketStatsProps = {
   price: number | null;
@@ -12,6 +13,7 @@ type MarketStatsProps = {
 
 export const MarketStats = ({ price, priceChange, marketCap, market }: MarketStatsProps) => {
   const m = MARKETS[market];
+  const explorerUrl = `https://sepolia.mantlescan.xyz/address/${PERP_ADDRESS}`;
 
   return (
     <div className="grid gap-4">
@@ -22,12 +24,17 @@ export const MarketStats = ({ price, priceChange, marketCap, market }: MarketSta
 
       <div className="flex justify-between items-center py-3 border-b border-border/40 hover:bg-muted/10 px-2 transition-colors">
         <span className="text-muted-foreground text-sm">Contract Address</span>
-        <button className="font-mono font-medium flex items-center gap-2 hover:text-primary transition-colors">
-          {m.asset.slice(0, 6)}...{m.asset.slice(-4)}
+        <a
+          href={explorerUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-mono font-medium flex items-center gap-2 hover:text-primary transition-colors cursor-pointer"
+        >
+          {PERP_ADDRESS.slice(0, 6)}...{PERP_ADDRESS.slice(-4)}
           <span className="text-muted-foreground">
             <ExternalLink className="w-3 h-3" />
           </span>
-        </button>
+        </a>
       </div>
 
       <div className="flex justify-between items-center py-3 border-b border-border/40 hover:bg-muted/10 px-2 transition-colors">
