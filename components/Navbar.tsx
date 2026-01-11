@@ -1,20 +1,20 @@
 "use client";
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { TrendingUp } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui/button";
+import Image from "next/image";
 
 export const Navbar = () => {
   return (
     <nav className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-3 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="bg-primary/10 p-2 rounded-lg">
-            <TrendingUp className="w-5 h-5 text-primary" />
+          <div className="rounded-full">
+            <Image src="/images/logo.png" alt="Logo" width={24} height={24} className="rounded-full" />
           </div>
           <span className="font-bold text-lg tracking-tight">
-            XAUT<span className="opacity-50 font-normal">.perp</span>
+            MANTLEX<span className="opacity-50 font-normal">.perp</span>
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -24,7 +24,6 @@ export const Navbar = () => {
               account,
               chain,
               openAccountModal,
-              openChainModal,
               openConnectModal,
               authenticationStatus,
               mounted,
@@ -52,7 +51,7 @@ export const Navbar = () => {
                       return (
                         <Button
                           onClick={openConnectModal}
-                          className="font-mono text-sm"
+                          className="font-mono text-sm cursor-pointer"
                         >
                           Connect Wallet
                         </Button>
@@ -62,9 +61,8 @@ export const Navbar = () => {
                     if (chain.unsupported) {
                       return (
                         <Button
-                          onClick={openChainModal}
                           variant="destructive"
-                          className="font-mono text-sm"
+                          className="font-mono text-sm cursor-pointer"
                         >
                           Wrong network
                         </Button>
@@ -74,9 +72,8 @@ export const Navbar = () => {
                     return (
                       <div className="flex gap-2">
                         <Button
-                          onClick={openChainModal}
                           variant="outline"
-                          className="font-mono text-xs px-2 py-1 h-auto"
+                          className="font-mono text-xs px-2 py-1 h-auto cursor-pointer"
                         >
                           {chain.hasIcon && (
                             <div
@@ -104,7 +101,7 @@ export const Navbar = () => {
                         <Button
                           onClick={openAccountModal}
                           variant="outline"
-                          className="font-mono text-xs"
+                          className="font-mono text-xs cursor-pointer"
                         >
                           {account.displayName}
                         </Button>
