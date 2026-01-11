@@ -4,6 +4,7 @@ import { type Time } from "lightweight-charts";
 
 export const useMarketData = (
   market: MarketKey,
+  timeframe: "24h" | "7d" | "30d" = "24h"
 ) => {
   const [price, setPrice] = useState<number | null>(null);
   const [ohlcData, setOhlcData] = useState<any[]>([]);
@@ -15,7 +16,7 @@ export const useMarketData = (
       try {
         const feed = MARKETS[market].pyth.replace("0x", "");
 
-        const res = await fetch(`/api/market/${feed}?tf=24h`);
+        const res = await fetch(`/api/market/${feed}?tf=${timeframe}`);
         const json = await res.json();
 
         setPrice(json.price);
@@ -49,7 +50,7 @@ export const useMarketData = (
     load();
     const h = setInterval(load, 30_000);
     return () => clearInterval(h);
-  }, [market]);
+  }, [market, timeframe]);
 
   return { price, ohlcData, priceChange, marketCap };
 };

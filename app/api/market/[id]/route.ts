@@ -10,8 +10,12 @@ export async function GET(
 ) {
   const { id } = await params;
   const feed = "0x" + id;
+
+  const url = new URL(req.url);
+  const timeframe = url.searchParams.get("tf") || "24h";
+
   try {
-    
+
     const feedHex = feed.startsWith("0x") ? feed : `0x${feed}`;
 
     const latest = await fetch(
@@ -24,12 +28,20 @@ export async function GET(
 
     const price = Number(p.price) * Math.pow(10, p.expo);
 
-   
+
     const cgId = mapPythToCoingecko(feedHex);
 
     if (!cgId) throw new Error("Unknown market");
 
-    const cached = OHLC_CACHE[cgId];
+    const daysMap: Record<string, number> = {
+      "24h": 1,
+      "7d": 7,
+      "30d": 30,
+    };
+    const days = daysMap[timeframe] || 1;
+
+    const cacheKey = `${cgId}_${timeframe}`;
+    const cached = OHLC_CACHE[cacheKey];
     const now = Date.now();
 
     let ohlc: any[] = [];
@@ -39,7 +51,7 @@ export async function GET(
     } else {
       try {
         const cg = await fetch(
-          `https://api.coingecko.com/api/v3/coins/${cgId}/ohlc?vs_currency=usd&days=1`,
+          `https://api.coingecko.com/api/v3/coins/${cgId}/ohlc?vs_currency=usd&days=${days}`,
           { cache: "no-store" }
         ).then((r) => r.json());
 
@@ -51,7 +63,7 @@ export async function GET(
           close: c[4],
         }));
 
-        OHLC_CACHE[cgId] = {
+        OHLC_CACHE[cacheKey] = {
           timestamp: now,
           data: ohlc,
         };

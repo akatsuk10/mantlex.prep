@@ -29,11 +29,12 @@ export default function Home() {
 
   const [market, setMarket] = useState<MarketKey>("XAUT");
   const [activeTab, setActiveTab] = useState<"market" | "positions">("market");
+  const [timeframe, setTimeframe] = useState<"24h" | "7d" | "30d">("24h");
 
   const [margin, setMargin] = useState("1");
   const [leverage, setLeverage] = useState(3);
 
-  const { price, priceChange, marketCap, ohlcData } = useMarketData(market);
+  const { price, priceChange, marketCap, ohlcData } = useMarketData(market, timeframe);
 
   const allPrices = useAllPrices(publicClient);
   const pricesReady = Object.keys(allPrices).length > 0;
@@ -129,6 +130,22 @@ export default function Home() {
                       <Skeleton className="w-10 h-10" />
                     </div>
                   )}
+
+                  <div className="flex justify-center gap-2 my-6">
+                    {(["24h", "7d", "30d"] as const).map((tf) => (
+                      <button
+                        key={tf}
+                        onClick={() => setTimeframe(tf)}
+                        className={`px-3 py-1 rounded-md text-xs font-mono border cursor-pointer ${
+                          timeframe === tf
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-background text-muted-foreground hover:border-border"
+                        }`}
+                      >
+                        {tf}
+                      </button>
+                    ))}
+                  </div>
 
                   <MarketStats
                     price={price}
