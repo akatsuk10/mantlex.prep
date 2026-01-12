@@ -1,4 +1,4 @@
-# Mantlex
+# Mantlex.prep
 
 On-chain Perpetual Futures for Real-World Assets
 
@@ -6,7 +6,7 @@ A decentralized perpetual trading protocol supporting multiple markets built on 
 
 ## Overview
 
-Mantlex is a perpetual DEX that enables users to:
+Mantlex.prep is a perpetual DEX that enables users to:
 
 - Trade perpetual futures on multiple assets (Gold, BTC, ETH, MNT)
 - Open long or short positions with custom leverage
