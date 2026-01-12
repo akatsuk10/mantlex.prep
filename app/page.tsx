@@ -138,8 +138,8 @@ export default function Home() {
                         key={tf}
                         onClick={() => setTimeframe(tf)}
                         className={`px-3 py-1 rounded-md text-xs font-mono border cursor-pointer ${timeframe === tf
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-background text-muted-foreground hover:border-border"
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background text-muted-foreground hover:border-border"
                           }`}
                       >
                         {tf}
@@ -179,7 +179,7 @@ export default function Home() {
                   )}
 
                   {isConnected && pricesReady && !initialLoad && allPositions.length > 0 && (
-                    <div className="space-y-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {allPositions.map((pos, i) => (
                         <PositionCard
                           key={i}
